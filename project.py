@@ -21,6 +21,8 @@ obj = ["person", "sky", "building", "truck", "bus", "table", "shirt", "chair", "
 predicate_orig = ["on", "wear", "has", "next to", "sleep next to", "sit next to", "stand next to", "park next", "walk next to", "above", "behind", "stand behind", "sit behind", "park behind", "in the front of", "under", "stand under", "sit under", "near", "walk to", "walk", "walk past", "in", "below", "beside", "walk beside", "over", "hold", "by", "beneath", "with", "on the top of", "on the left of", "on the right of", "sit on", "ride", "carry", "look", "stand on", "use", "at", "attach to", "cover", "touch", "watch", "against", "inside", "adjacent to", "across", "contain", "drive", "drive on", "taller than", "eat", "park on", "lying on", "pull", "talk", "lean on", "fly", "face", "play with", "sleep on", "outside of", "rest on", "follow", "hit", "feed", "kick", "skate on"]
 predicate_zero = ["run" , "give" , "leave" , "enter" , "exit" , "draw" ,"see" , "swim" , "help" , "start" , "bring" , "write" , "meet" , "read" ,"open" , "die" , "kill" , "stop" , "teach" ,"think"]
 
+## NN MODULE
+# Printing LOSS
 class LossHistory(cb.Callback):
 	def on_train_begin(self, logs={}):
 		self.losses = []
@@ -29,7 +31,7 @@ class LossHistory(cb.Callback):
 		batch_loss = logs.get('loss')
 		self.losses.append(batch_loss)
 
-
+# Model Description
 def init_model():
 	start_time = time.time()
 	print('Compiling FNN ... ')
@@ -48,6 +50,7 @@ def init_model():
 	print('Model compiled in {0} seconds'.format(time.time() - start_time))
 	return model
 
+# Typical keras run_network function. Used from Keras normal NN code snippets
 def run_network(data=None, model=None, epochs=20, batch=256):
 	try:
 		start_time = time.time()
@@ -74,7 +77,9 @@ def run_network(data=None, model=None, epochs=20, batch=256):
 	except KeyboardInterrupt:
 		print(' KeyboardInterrupt')
 		return model, history.losses
-
+# This is the part where we loop over all word in predicate list
+# and select the one in nearest to our estimated Glove Vector
+# For notion of NEAR used L2NORM
 def predict(input,FCmodel,model):
     global predicate_orig
     global predicate_zero
@@ -99,12 +104,13 @@ def predict(input,FCmodel,model):
     return predicate_out
 
 # def main():
+# GENSIM models to load any embedding needed
 def loadWordModel(filename):
 	# filename = './GoogleNews-vectors-negative300.bin'
 	wordModel = KeyedVectors.load_word2vec_format(filename, binary=False)
 	print("--- Word-vectors loaded ----")
 	return wordModel
-
+# load training data, replace the word predicate with embedding and pass to NN module
 def train(path, wordModel, model=None, epochs=2, batch=256):
 	roidb_file = np.load(path,encoding='bytes')
 	roidb_temp = roidb_file['roidb']
@@ -154,7 +160,7 @@ def train(path, wordModel, model=None, epochs=2, batch=256):
 
 wordModel = loadWordModel('./glove.word2vec')
 trainedModel = train('./vrd_pred_train_roidb.npz',wordModel, model=None, epochs=50, batch=32)
-
+## POST training, Load test data for various run 
 path='./vrd_pred_test_roidb.npz'
 roidb_file = np.load(path,encoding='bytes')
 roidb_temp = roidb_file['roidb']
@@ -238,8 +244,10 @@ def accuracy2(subObj,trainedModel,wordModel,word , topn):
 
 
 # 1 is an image number in testdata RANGE 1-954
+# SOME sample run for first test dataimage
 tester(1,subObj,trainedModel,wordModel,word)
 predict2(1,np.asarray(subObj[1]),trainedModel,wordModel)
+# Run over all testdata to find accuracy
 accuracy1(subObj,trainedModel,wordModel,word)
 
 
@@ -257,6 +265,7 @@ accuracy1(subObj,trainedModel,wordModel,word)
 
 """
 # np.savez('./data.npz' , myDict = myDict )
+# savers in case of later needs
 from keras.models import model_from_json
 def saver(path,model):
 	model_json = model.to_json()
